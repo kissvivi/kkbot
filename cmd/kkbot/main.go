@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	kkbot "github.kissvivi.kkbot"
+	"github.kissvivi.kkbot/db"
 	"github.kissvivi.kkbot/game"
 	"github.kissvivi.kkbot/util"
 )
@@ -11,17 +12,16 @@ var _nowGame string
 
 func main() {
 
-	////初始化config
-	////初始化application
-	////启动数据库
-	//cfg, err := kkbot.InitConfig()
-	//if err != nil {
-	//	panic(err)
-	//}
-	////初始化数据库
-	//baseDB := db.NewBaseDB("mysql")
-	//baseDB.SetConfig(cfg)
-	//baseDB.InitDB()
+	//初始化config
+	//初始化application
+	//启动数据库
+	cfg, err1 := kkbot.InitConfig()
+	if err1 != nil {
+		panic(err1)
+	}
+	//初始化数据库
+	baseDB := db.NewBaseDB("mysql")
+	baseDB.InitDB(cfg)
 
 	fmt.Print("[KiKiBot] 请输入直播间 ID: ")
 	var rid int64

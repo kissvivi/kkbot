@@ -28,14 +28,18 @@ func NewWhoIS() *WhoIS {
 
 func (w WhoIS) Gaming(msg kkbot.FmMessage) {
 	//util.Info("[游戏进行中--------]")
-	if isUserIn(msg) {
 
+	//判断用户是否加入此游戏 且游戏已经开始
+	if isUserIn(msg) {
 		util.Info(fmt.Sprintf("第[%d]轮进行中", _NOW_LUN))
-		if _sumL <= 2 {
-			util.Info("[人数小于3，游戏结束--------]")
-			w.Win(msg)
-		}
+		//卧底投票  进入投票逻辑
 		if strings.Contains(msg.Message, "卧底>") {
+			//游戏结束
+			if _sumL <= 2 {
+				util.Info("[人数小于3，游戏结束--------]")
+				kkbot.Send("[人数小于3，游戏结束,重新开始下一轮]")
+				w.Win(msg)
+			}
 
 			if queue[_nowL].ID == msg.User.UserID {
 				w.Next()
@@ -58,6 +62,11 @@ func (w WhoIS) Gaming(msg kkbot.FmMessage) {
 				kkbot.Send(fmt.Sprintf("[猜卧底--- 恭喜@%s,猜对卧底了,卧底是->@%s]", msg.User.Username, _W_PLAYER.Name))
 				w.Win(msg)
 			} else {
+				for i, player := range queue {
+					if player.Name == wduser {
+						queue[i].Count += 1
+					}
+				}
 				w.Next()
 			}
 		}
@@ -102,6 +111,7 @@ func (w WhoIS) Next() {
 
 			for _, player := range queue {
 
+				time.Sleep(200)
 				if player.ID == _W_PLAYER.ID {
 					kkbot.SendMessage(int(player.ID), fmt.Sprintf("[谁是卧底游戏-%s]，题目是%s", time.Now().Format("15:04:05"), cardMap[winNum1].loseCard))
 				} else {
@@ -120,7 +130,33 @@ func (w WhoIS) Next() {
 			fmt.Println("第一轮投票结束，开始第二轮阐述")
 			_NOW_LUN += 1
 			_nowL = 0
-			//t人
+			//t人  票数最高人 退出
+			_sumL--
+
+			//选择排序 找最大的count
+			var max int
+			tempsQueue := make([]Player, 0)
+			copy(tempsQueue, queue)
+			for i, _ := range queue {
+				max = i
+				for j, player := range tempsQueue {
+					if player.Count > max {
+						max = j
+					}
+					temp := tempsQueue[max]
+					tempsQueue[max] = tempsQueue[i]
+					tempsQueue[i] = temp
+				}
+			}
+
+			//删除 最大的count节点
+			delUserByID(tempsQueue[0].ID)
+
+			//新一轮  初始化次数
+			for i, _ := range queue {
+				queue[i].Count = 0
+			}
+
 		} else {
 			_nowL = 0
 		}
@@ -203,6 +239,7 @@ func (w WhoIS) InitCards(path string) {
 	}
 }
 
+//根据id获取name
 func getUserNameByID(uid int64) (res bool) {
 	res = false
 	for _, player := range queue {
@@ -215,6 +252,40 @@ func getUserNameByID(uid int64) (res bool) {
 		}
 	}
 	return
+}
+
+//// DeleteSlice3 删除指定元素。
+//func DeleteSlice3(a []int, elem int) []int {
+//	j := 0
+//	for _, v := range a {
+//		if v != elem {
+//			a[j] = v
+//			j++
+//		}
+//	}
+//	return a[:j]
+//}
+
+//// DeleteSlice4 删除指定元素。
+//func DeleteSlice4(a []int, elem int) []int {
+//	tgt := a[:0]
+//	for _, v := range a {
+//		if v != elem {
+//			tgt = append(tgt, v)
+//		}
+//	}
+//	return tgt
+//}
+
+//根据id获取name
+func delUserByID(uid int64) {
+	tgt := queue[:0]
+	for _, player := range queue {
+		if uid != player.ID {
+			tgt = append(tgt, player)
+		}
+	}
+	queue = tgt
 }
 
 func isUserIn(msg kkbot.FmMessage) (res bool) {
@@ -248,7 +319,8 @@ func (w WhoIS) PlayerList() {
 
 	var plmsg string
 	for _, player := range queue {
-		plmsg += player.Name + "\n"
+		plmsg += player.Name + "\t"
+		plmsg += "被投次数:" + string(player.Count) + "\n"
 	}
 	kkbot.Send(plmsg)
 }

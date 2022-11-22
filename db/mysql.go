@@ -7,32 +7,17 @@ import (
 	"gorm.io/gorm"
 )
 
+var MysqlConn *gorm.DB
+
 type MysqlDB struct {
-	DB       *gorm.DB
-	Url      string
-	UserName string
-	Password string
-	DBName   string
+	DB *gorm.DB
 }
 
-func (m MysqlDB) SetConfig(conf *kkbot.Config) {
-	m.Url = conf.DataSource.Mysql.Url
-	m.UserName = conf.DataSource.Mysql.Username
-	m.Password = conf.DataSource.Mysql.Password
-	m.DBName = conf.DataSource.Mysql.Dbname
-}
-
-func (m MysqlDB) AutoMigrates(dst ...interface{}) {
-	if err := m.DB.AutoMigrate(dst); err != nil {
-		panic(err)
-	}
-}
-
-func (m MysqlDB) InitDB() {
+func (m MysqlDB) InitDB(conf *kkbot.Config) {
 
 	db, err := gorm.Open(mysql.New(mysql.Config{
 		DSN: fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
-			m.UserName, m.Password, m.Url, m.DBName), // DSN data source name
+			conf.DataSource.Mysql.Username, conf.DataSource.Mysql.Password, conf.DataSource.Mysql.Url, conf.DataSource.Mysql.Dbname), // DSN data source name
 		DefaultStringSize:         256,   // string 类型字段的默认长度
 		DisableDatetimePrecision:  true,  // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
 		DontSupportRenameIndex:    true,  // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
@@ -43,6 +28,7 @@ func (m MysqlDB) InitDB() {
 		panic(err)
 	}
 	m.DB = db
+	MysqlConn = db
 }
 
 var _ BaseDB = (*MysqlDB)(nil)

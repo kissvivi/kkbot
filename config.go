@@ -1,14 +1,15 @@
 package kkbot
+
 import (
 	"github.com/spf13/viper"
 )
+
 type Config struct {
-	App App
-	DataSource DataSource
+	App        App        `json:"app"`
+	DataSource DataSource `json:"datasource"`
 }
 
 type App struct {
-
 }
 
 type DataSource struct {
